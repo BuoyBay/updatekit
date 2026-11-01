@@ -1,0 +1,10 @@
+{
+  "source_sha256": "86bd9eb71eb00994ab7f9cb2fe820745527d190daebb245c071c123c44a300db",
+  "target": "x86_64-windows",
+  "rust_target": "x86_64-pc-windows-gnu",
+  "build_host": "Linux-6.12.111+deb13-amd64-x86_64-with-glibc2.41",
+  "native_dlopen_checked": false,
+  "macho_string_pool_aligned": false,
+  "library_sha256": "86517e25788043dd3bbfe53b04717d347dacf1a4dcd66f4f43ed18d6d9f7f858",
+  "helper_sha256": "e7de43c78e275dc1c568d386015c6ec39e4f5121696fd68e5d0608fde874c7f8"
+}

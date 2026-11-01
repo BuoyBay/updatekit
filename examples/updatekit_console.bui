@@ -1,0 +1,27 @@
+Import updatekit
+
+' Arguments: signed manifest HTTPS URL, pinned Ed25519 public key (hex).
+' This sample checks only. Add Download/PrepareInstall/InstallAfterExit explicitly.
+Sub Main(args As Array Of String)
+    If args.Count() <> 3 Then
+        Print "Usage: updatekit-console <manifest-url> <public-key-hex>"
+        Return
+    End If
+    Dim source As UpdateSource = UpdateSource.SelfHosted(args(1))
+    Dim options As New UpdateOptions("com.example.myapp", "1.0.0", source, args(2))
+    Dim updater As New UpdateSession(options)
+    updater.Check()
+    Dim snapshot As UpdateSnapshot = updater.Snapshot()
+    While snapshot.IsBusy
+        Thread.Sleep(25)
+        snapshot = updater.Snapshot()
+    End While
+    snapshot.ThrowIfFailed()
+    If snapshot.State = "available" Then
+        Print "Available: " + snapshot.Version
+        Print snapshot.ReleaseNotes
+    Else
+        Print "No compatible newer update."
+    End If
+    updater.Close()
+End Sub

@@ -1,0 +1,7 @@
+{
+  "schema": 1,
+  "name": "updatekit",
+  "version": "0.1.0",
+  "description": "Headless signed updates from self-hosted feeds and GitHub Releases, with optional download, portable install and relaunch",
+  "libraries": [{"libName": "buoy_updatekit", "system": false, "minVersion": "0.1.0"}]
+}

@@ -1,0 +1,120 @@
+/dist/
+/local/
+.buoy/
+.bpm/
+node_modules/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+/.mcp.json
+/.cursor/mcp.json
+.claude/settings.local.json
+
+# Agent entrypoints are generated locally by buoy ai init.
+AGENTS.md
+CLAUDE.md
+
+buoy-llms.txt
+
+.claude/
+
+.cursor/
+
+# Dedicated test inputs remain private and local.
+[Tt]ests/
+[Tt]est/
+[Vv]alidation/
+[Ff]ixtures/
+[Ee]vidence/
+[Tt]est_*
+[Tt]est-*
+[Tt]est.*
+[Tt]ests.*
+*_test.*
+*_tests.*
+*-test.*
+*-tests.*
+*_test
+*_tests
+*-test
+*-tests
+*_validation.*
+*-validation.*
+[Vv]alidation.*
+VALIDATION.*
+*_smoke.*
+*-smoke.*
+[Ss]moke.*
+PUBLIC_PACKAGE_VALIDATION.md
+!libraries/testkit/modules/
+!libraries/testkit/modules/**
+# Test pattern case variants.
+[tT][eE][sS][tT][sS]/
+[tT][eE][sS][tT]/
+[vV][aA][lL][iI][dD][aA][tT][iI][oO][nN]/
+[fF][iI][xX][tT][uU][rR][eE][sS]/
+[eE][vV][iI][dD][eE][nN][cC][eE]/
+[tT][eE][sS][tT]_*
+[tT][eE][sS][tT]-*
+[tT][eE][sS][tT].*
+[tT][eE][sS][tT][sS].*
+*_[tT][eE][sS][tT].*
+*_[tT][eE][sS][tT][sS].*
+*-[tT][eE][sS][tT].*
+*-[tT][eE][sS][tT][sS].*
+*_[tT][eE][sS][tT]
+*_[tT][eE][sS][tT][sS]
+*-[tT][eE][sS][tT]
+*-[tT][eE][sS][tT][sS]
+*_[vV][aA][lL][iI][dD][aA][tT][iI][oO][nN].*
+*-[vV][aA][lL][iI][dD][aA][tT][iI][oO][nN].*
+[vV][aA][lL][iI][dD][aA][tT][iI][oO][nN].*
+*_[sS][mM][oO][kK][eE].*
+*-[sS][mM][oO][kK][eE].*
+[sS][mM][oO][kK][eE].*
+[pP][uU][bB][lL][iI][cC]_[pP][aA][cC][kK][aA][gG][eE]_[vV][aA][lL][iI][dD][aA][tT][iI][oO][nN].[mM][dD]
+!libraries/testkit/modules/
+!libraries/testkit/modules/**
+
+# BEGIN public Python exceptions
+# Python is local by default. Each public file needs its own justification in PYTHON.md.
+*.py
+# END public Python exceptions
+
+# Local sealed artifacts are regenerated from source.
+/packages/
+
+# These native slices are distributable package inputs.
+!/runtime/
+!/runtime/**
+
+# These native slices are distributable package inputs.
+!/link/
+!/link/**
+
+# No CLA policy applies to this permissive repository.
+legal/
+
+# Private validation guides.
+[tT][eE][sS][tT][iI][nN][gG].*
+
+# Machine-generated AI setup.
+.github/copilot-instructions.md
+
+# Historical review reports remain private.
+[aA][uU][dD][iI][tT].[mM][dD]
+[rR][eE][vV][iI][eE][wW].[mM][dD]
+[aA][cC][cC][eE][pP][tT][aA][nN][cC][eE].[mM][dD]
+[aA][sS][tT][rR][aA].[mM][dD]
+*_[aA][uU][dD][iI][tT].[mM][dD]
+*-[aA][uU][dD][iI][tT].[mM][dD]
+*_[rR][eE][vV][iI][eE][wW].[mM][dD]
+*-[rR][eE][vV][iI][eE][wW].[mM][dD]
+*_[aA][cC][cC][eE][pP][tT][aA][nN][cC][eE].[mM][dD]
+*-[aA][cC][cC][eE][pP][tT][aA][nN][cC][eE].[mM][dD]
+*[fF][iI][nN][aA][lL]*[aA][uU][dD][iI][tT]*.[mM][dD]
+*[fF][iI][nN][aA][lL]*[rR][eE][vV][iI][eE][wW]*.[mM][dD]
+*[fF][iI][nN][aA][lL]*[aA][cC][cC][eE][pP][tT][aA][nN][cC][eE]*.[mM][dD]
+[aA][uU][dD][iI][tT][0-9]*.[mM][dD]

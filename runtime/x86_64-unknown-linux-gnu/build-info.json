@@ -1,0 +1,10 @@
+{
+  "source_sha256": "86bd9eb71eb00994ab7f9cb2fe820745527d190daebb245c071c123c44a300db",
+  "target": "x86_64-linux",
+  "rust_target": "x86_64-unknown-linux-gnu",
+  "build_host": "Linux-6.12.111+deb13-amd64-x86_64-with-glibc2.41",
+  "native_dlopen_checked": true,
+  "macho_string_pool_aligned": false,
+  "library_sha256": "9d1620cb9c355d072840540a4b77b064f13f6dc394006a16d7b1031a167a07c6",
+  "helper_sha256": "b30f7620dba823d3b165e7930418e2ca817b554101d71526cf8a3804e46d8b77"
+}

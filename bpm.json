@@ -1,0 +1,18 @@
+{
+    "schema": 1,
+    "dependencies": {},
+    "files": [
+        "manifest.json",
+        "modules",
+        "resources",
+        "link",
+        "runtime",
+        "README.md",
+        "PROVENANCE.md",
+        "LICENSE",
+        "LICENSE-MIT.txt",
+        "LICENSE-APACHE.txt",
+        "LICENSE-DOCS.txt",
+        "NOTICE.md"
+    ]
+}

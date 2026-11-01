@@ -1,0 +1,10 @@
+{
+  "source_sha256": "86bd9eb71eb00994ab7f9cb2fe820745527d190daebb245c071c123c44a300db",
+  "target": "arm64-darwin",
+  "rust_target": "aarch64-apple-darwin",
+  "build_host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "native_dlopen_checked": true,
+  "macho_string_pool_aligned": true,
+  "library_sha256": "61c81f5eeb006a5357b15a433d762730f0f069984a3afdbfaeab2c2f415bf53c",
+  "helper_sha256": "d3d1fbde1bd042ed3905ab90618f1606e7f2f8add3ff14aa53e8fa924f750b05"
+}

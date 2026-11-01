@@ -1,0 +1,367 @@
+' Headless asynchronous updater. Every action is explicit; importing has no side effects.
+Private Declare Function N_new Lib "buoy_updatekit" Alias "bup_new" (configuration As String) As Ptr
+Private Declare Function N_start Lib "buoy_updatekit" Alias "bup_start" (handle As Ptr, request As String) As Integer
+Private Declare Function N_snapshot Lib "buoy_updatekit" Alias "bup_snapshot" (handle As Ptr) As String
+Private Declare Sub N_cancel Lib "buoy_updatekit" Alias "bup_cancel" (handle As Ptr)
+Private Declare Sub N_delete Lib "buoy_updatekit" Alias "bup_delete" (handle As Ptr)
+
+Public Class UpdateException Inherits Exception
+    Public Sub Constructor(message As String)
+        Super.Constructor(message, 0)
+    End Sub
+End Class
+
+Public Class UpdateSource
+    Internal Property Data As JSONItem
+
+    Private Sub Constructor(data As JSONItem)
+        Me.Data = data
+    End Sub
+
+    ''' A signed update-manifest.json served over HTTPS.
+    Public Shared Function SelfHosted(url As String, token As String = "") As UpdateSource
+        Dim data As JSONItem = JSONItem.NewObject()
+        data.Value("kind") = "manifest"
+        data.Value("url") = url
+        data.Value("token") = token
+        Return New UpdateSource(data)
+    End Function
+
+    ''' Each release contains an exact named signed manifest asset. Token stays on the API origin.
+    Public Shared Function GitHub(owner As String, repository As String, token As String = "", apiURL As String = "https://api.github.com", manifestAsset As String = "update-manifest.json", maxReleases As Integer = 20) As UpdateSource
+        Dim data As JSONItem = JSONItem.NewObject()
+        data.Value("kind") = "github"
+        data.Value("owner") = owner
+        data.Value("repository") = repository
+        data.Value("token") = token
+        data.Value("api_url") = apiURL
+        data.Value("manifest_asset") = manifestAsset
+        data.Value("max_releases") = maxReleases
+        Return New UpdateSource(data)
+    End Function
+End Class
+
+Public Class UpdateOptions
+    Public Property AppID As String
+    Public Property CurrentVersion As String
+    Public Property Source As UpdateSource
+    Public Property PublicKey As String
+    Public Property Channel As String = "stable"
+    Public Property Platform As String
+    Public Property Architecture As String
+    Public Property TimeoutSeconds As Integer = 120
+    Public Property MaxDownloadBytes As Integer = 1073741824
+    Public Property MinimumSequence As Integer = 0
+    Public Property AllowHTTPLoopback As Boolean = False
+
+    Public Sub Constructor(appID As String, currentVersion As String, source As UpdateSource, publicKey As String)
+        Me.AppID = appID
+        Me.CurrentVersion = currentVersion
+        Me.Source = source
+        Me.PublicKey = publicKey
+        #If TargetMac Then
+            Me.Platform = "macos"
+        #ElseIf TargetWindows Then
+            Me.Platform = "windows"
+        #Else
+            Me.Platform = "linux"
+        #End If
+        #If TargetArm Then
+            Me.Architecture = "arm64"
+        #Else
+            Me.Architecture = "x86_64"
+        #End If
+    End Sub
+
+    Internal Function Encode() As String
+        If Me.Source = Nil Then Throw New InvalidArgumentException("An update source is required")
+        Dim data As JSONItem = JSONItem.NewObject()
+        data.Value("app_id") = Me.AppID
+        data.Value("current_version") = Me.CurrentVersion
+        data.Value("source") = Me.Source.Data
+        data.Value("public_key") = Me.PublicKey
+        data.Value("channel") = Me.Channel
+        data.Value("platform") = Me.Platform
+        data.Value("arch") = Me.Architecture
+        data.Value("timeout_seconds") = Me.TimeoutSeconds
+        data.Value("max_download_bytes") = Me.MaxDownloadBytes
+        data.Value("minimum_sequence") = Me.MinimumSequence
+        data.Value("allow_http_loopback") = Me.AllowHTTPLoopback
+        Return Json.Stringify(data)
+    End Function
+End Class
+
+''' An immutable view of an operation. Obtain a fresh snapshot to see progress.
+Public Class UpdateSnapshot
+    Private Property Data As JSONItem
+
+    Internal Sub Constructor(data As JSONItem)
+        Me.Data = data
+    End Sub
+
+    Public Property State As String
+        Get
+            Return Me.Data.Value("state").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property IsBusy As Boolean
+        Get
+            Return Me.Data.Value("busy").AsBoolean().Or(False)
+        End Get
+    End Property
+
+    Public Property ErrorMessage As String
+        Get
+            Return Me.Data.Value("error").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property BytesReceived As Integer
+        Get
+            Return Me.Data.Value("bytes").AsNumber().Or(0.0)
+        End Get
+    End Property
+
+    Public Property TotalBytes As Integer
+        Get
+            Return Me.Data.Value("total").AsNumber().Or(0.0)
+        End Get
+    End Property
+
+    Public Property Version As String
+        Get
+            Return Me.Data.Value("release").Value("version").AsString().Or("")
+        End Get
+    End Property
+
+    ''' Plain untrusted text. Do not render it as active HTML.
+    Public Property ReleaseNotes As String
+        Get
+            Return Me.Data.Value("release").Value("notes").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property Sequence As Integer
+        Get
+            Return Me.Data.Value("sequence").AsNumber().Or(0.0)
+        End Get
+    End Property
+
+    Public Property DownloadPath As String
+        Get
+            Return Me.Data.Value("download_path").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property TransactionPath As String
+        Get
+            Return Me.Data.Value("transaction_path").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property TransactionState As String
+        Get
+            Return Me.Data.Value("transaction_state").AsString().Or("")
+        End Get
+    End Property
+
+    Public Property TransactionError As String
+        Get
+            Return Me.Data.Value("transaction_error").AsString().Or("")
+        End Get
+    End Property
+
+    Public Sub ThrowIfFailed()
+        If Me.State = "failed" Then Throw New UpdateException(Me.ErrorMessage)
+    End Sub
+End Class
+
+''' Confine this object to one caller thread. Its native workers never call Buoy code.
+''' GUI apps poll from a timer; console apps can poll and Thread.Sleep between snapshots.
+Public Class UpdateSession
+    Private Property Handle As Ptr
+
+    Public Sub Constructor(options As UpdateOptions)
+        If options = Nil Then Throw New InvalidArgumentException("Update options are required")
+        Me.Handle = N_new(options.Encode())
+        If Me.Handle = Nil Then Throw New UpdateException("Unable to allocate updater")
+        Dim initial As UpdateSnapshot = Me.Snapshot()
+        If initial.State = "failed" Then
+            Me.Close()
+            Throw New UpdateException(initial.ErrorMessage)
+        End If
+    End Sub
+
+    Private Sub RequireOpen()
+        If Me.Handle = Nil Then Throw New InvalidArgumentException("Updater is closed")
+    End Sub
+
+    Private Sub Start(request As JSONItem)
+        Me.RequireOpen()
+        If N_start(Me.Handle, Json.Stringify(request)) = 0 Then Throw New UpdateException("Updater is busy or the action could not be started")
+    End Sub
+
+    Private Function Action(name As String) As JSONItem
+        Dim request As JSONItem = JSONItem.NewObject()
+        request.Value("action") = name
+        Return request
+    End Function
+
+    ''' Fetch and authenticate metadata; does not download the application.
+    Public Sub Check()
+        Me.Start(Me.Action("check"))
+    End Sub
+
+    ''' Authenticate caller-supplied signed metadata without any network request.
+    Public Sub LoadManifest(envelope As String)
+        Dim request As JSONItem = Me.Action("load_manifest")
+        request.Value("envelope") = Json.Parse(envelope)
+        Me.Start(request)
+    End Sub
+
+    ''' Stream and verify the selected asset into an owned private temporary directory.
+    Public Sub Download()
+        Me.Start(Me.Action("download"))
+    End Sub
+
+    ' Verify and privately copy a sideloaded update. Allows fully offline installs.
+    Public Sub AdoptFile(filePath As String)
+        Dim request As JSONItem = Me.Action("adopt")
+        request.Value("path") = filePath
+        Me.Start(request)
+    End Sub
+
+    ' Verify an already downloaded file against the selected signed metadata.
+    Public Sub VerifyFile(filePath As String)
+        Dim request As JSONItem = Me.Action("verify")
+        request.Value("path") = filePath
+        Me.Start(request)
+    End Sub
+
+    ''' Copy a verified download to a new path; refuses to overwrite existing files.
+    Public Sub SaveDownload(filePath As String)
+        Dim request As JSONItem = Me.Action("save")
+        request.Value("path") = filePath
+        Me.Start(request)
+    End Sub
+
+    ''' Extract, validate and stage next to target; does not replace the installed app.
+    ''' executable is a relative path inside a directory target, or empty for a single binary.
+    Public Sub PrepareInstall(target As String, executable As String = "")
+        Dim arguments As Array Of String = []
+        Me.PrepareInstall(target, executable, arguments)
+    End Sub
+
+    Public Sub PrepareInstall(target As String, executable As String, arguments As Array Of String)
+        Dim request As JSONItem = Me.Action("prepare")
+        request.Value("target") = target
+        request.Value("executable") = executable
+        Dim args As JSONItem = JSONItem.NewArray()
+        If arguments <> Nil Then
+            For Each argument As String In arguments
+                args.Add(argument)
+            Next
+        End If
+        request.Value("arguments") = args
+        Me.Start(request)
+    End Sub
+
+    ''' Hand off to the bundled helper. The host must then exit itself; no forced exit occurs.
+    ''' Relaunch is opt-in. Use the exact helper binary built for this package and platform.
+    Public Sub InstallAfterExit(relaunch As Boolean = False)
+        Dim platformName As String
+        Dim architectureName As String
+        Dim filename As String = "buoy-update-helper"
+        #If TargetMac Then
+            platformName = "darwin"
+        #ElseIf TargetWindows Then
+            platformName = "windows"
+            filename += ".exe"
+        #Else
+            platformName = "linux"
+        #End If
+        #If TargetArm Then
+            architectureName = "arm64"
+        #Else
+            architectureName = "x86_64"
+        #End If
+        Dim helper As FileSystemItem = FileSystemItem.PackageResource("updatekit", architectureName + "-" + platformName + "/" + filename)
+        If helper = Nil Then Throw New UpdateException("The updatekit helper for this platform is missing from the application resources")
+        Me.InstallAfterExit(helper.FullPath(), relaunch)
+    End Sub
+
+    Public Sub InstallAfterExit(helperPath As String, relaunch As Boolean = False)
+        Dim request As JSONItem = Me.Action("install")
+        request.Value("helper_path") = helperPath
+        request.Value("relaunch") = relaunch
+        Me.Start(request)
+    End Sub
+
+    ''' Explicitly restore the retained backup after a failed update or health check.
+    Public Sub Rollback(transactionPath As String)
+        Dim request As JSONItem = Me.Action("rollback")
+        request.Value("transaction_path") = transactionPath
+        Me.Start(request)
+    End Sub
+
+    ' Recover a target whose replacement was interrupted, even if the target is currently missing.
+    Public Sub Recover(target As String)
+        Dim request As JSONItem = Me.Action("recover")
+        request.Value("target") = target
+        Me.Start(request)
+    End Sub
+
+    Public Sub InspectTransaction(transactionPath As String)
+        Dim request As JSONItem = Me.Action("inspect")
+        request.Value("transaction_path") = transactionPath
+        Me.Start(request)
+    End Sub
+
+    ' The helper passes this to a relaunched process for health confirmation.
+    Public Shared Function RelaunchedTransactionPath() As String
+        Return System.EnvironmentVariable("BUOY_UPDATE_TRANSACTION").Or("")
+    End Function
+
+    ' Commit a healthy installed update and remove its retained backup.
+    Public Sub ConfirmHealthy(transactionPath As String)
+        Dim request As JSONItem = Me.Action("confirm")
+        request.Value("transaction_path") = transactionPath
+        Me.Start(request)
+    End Sub
+
+    Public Function Snapshot() As UpdateSnapshot
+        Me.RequireOpen()
+        Return New UpdateSnapshot(Json.Parse(N_snapshot(Me.Handle)))
+    End Function
+
+    ' Blocking convenience for console apps. A timeout leaves the action running.
+    Public Function WaitUntilIdle(timeoutMilliseconds As Integer = 0) As UpdateSnapshot
+        If timeoutMilliseconds < 0 Then Throw New InvalidArgumentException("Timeout must not be negative")
+        Dim elapsed As Integer = 0
+        Dim current As UpdateSnapshot = Me.Snapshot()
+        While current.IsBusy
+            If timeoutMilliseconds > 0 And elapsed >= timeoutMilliseconds Then Throw New UpdateException("Waiting for updater timed out")
+            Thread.Sleep(25)
+            elapsed += 25
+            current = Me.Snapshot()
+        End While
+        Return current
+    End Function
+
+    Public Sub Cancel()
+        Me.RequireOpen()
+        N_cancel(Me.Handle)
+    End Sub
+
+    ''' Cancels work and releases this handle. A handed-off installer remains independent.
+    Public Sub Close()
+        If Me.Handle = Nil Then Return
+        N_delete(Me.Handle)
+        Me.Handle = Nil
+    End Sub
+
+    Public Sub Destructor()
+        Me.Close()
+    End Sub
+End Class

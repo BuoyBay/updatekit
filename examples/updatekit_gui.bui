@@ -1,0 +1,106 @@
+Import updatekit
+
+Window UpdateDemoLayout
+    Title = "Application updates"
+    Frame = (100, 100, 680, 300)
+    Control Label statusLabel
+        Text = "Choose Check for updates."
+        Frame = (24, 24, 632, 28)
+    End Control
+    Control TextArea notes
+        IsReadOnly = True
+        Frame = (24, 64, 632, 144)
+    End Control
+    Control Button checkButton
+        Caption = "Check for updates"
+        Frame = (24, 232, 192, 32)
+    End Control
+    Control Button downloadButton
+        Caption = "Download"
+        Enabled = False
+        Frame = (236, 232, 192, 32)
+    End Control
+    Control Button cancelButton
+        Caption = "Cancel"
+        Enabled = False
+        Frame = (448, 232, 192, 32)
+    End Control
+End Window
+
+Private Class UpdateDemoTimer Inherits Timer
+    Public Property Owner As UpdateDemoWindow
+    Public Overrides Sub NotifyTick()
+        If Me.Owner <> Nil Then Me.Owner.PollUpdate()
+    End Sub
+End Class
+
+Class UpdateDemoWindow Inherits UpdateDemoLayout
+    Private Property Updater As UpdateSession
+    Private Property Poller As UpdateDemoTimer
+
+    Public Sub Constructor(options As UpdateOptions)
+        Super.Constructor()
+        Me.Updater = New UpdateSession(options)
+        Me.Poller = New UpdateDemoTimer()
+        Me.Poller.Owner = Me
+        Me.Poller.Period = 100
+        Me.Poller.Start()
+    End Sub
+
+    Public Sub PollUpdate()
+        Dim current As UpdateSnapshot = Me.Updater.Snapshot()
+        Me.checkButton.Enabled = Not current.IsBusy
+        Me.downloadButton.Enabled = Not current.IsBusy And current.State = "available"
+        Me.cancelButton.Enabled = current.IsBusy
+        If current.State = "failed" Then
+            Me.statusLabel.Text = current.ErrorMessage
+        ElseIf current.State = "available" Then
+            Me.statusLabel.Text = "Update available: " + current.Version
+            Me.notes.Text = current.ReleaseNotes
+        ElseIf current.State = "downloading" Then
+            Me.statusLabel.Text = "Downloading: " + String.From(current.BytesReceived) + " / " + String.From(current.TotalBytes) + " bytes"
+        ElseIf current.State = "downloaded" Then
+            Me.statusLabel.Text = "Download verified."
+            Me.notes.Text = current.DownloadPath
+        ElseIf current.State <> "idle" Then
+            Me.statusLabel.Text = current.State
+        End If
+    End Sub
+
+    With checkButton
+        Handle Action()
+            Me.Updater.Check()
+            Me.PollUpdate()
+        End Handle
+    End With
+    With downloadButton
+        Handle Action()
+            Me.Updater.Download()
+            Me.PollUpdate()
+        End Handle
+    End With
+    With cancelButton
+        Handle Action()
+            Me.Updater.Cancel()
+        End Handle
+    End With
+    Handle Closed()
+        Me.Poller.Stop()
+        Me.Poller.Owner = Nil
+        Me.Updater.Close()
+        Application.Quit()
+    End Handle
+End Class
+
+' This demo checks and downloads only. Downloads are discarded when the window closes.
+Sub Main(args As Array Of String)
+    If args.Count() <> 5 Then
+        Print "Usage: updatekit-gui <app-id> <current-semver> <manifest-url> <public-key-hex>"
+        Return
+    End If
+    Dim source As UpdateSource = UpdateSource.SelfHosted(args(3))
+    Dim options As New UpdateOptions(args(1), args(2), source, args(4))
+    Dim window As New UpdateDemoWindow(options)
+    window.Show()
+    Application.Run()
+End Sub
