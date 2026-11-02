@@ -19,7 +19,7 @@ from that workspace root before running builders in `local/integration/`:
 
 ```sh
 ./dist/workspace-manager/buoybay assemble
-```
+```basic
 
 Edit this owning checkout, then reassemble; the generated integration tree is
 not the place to keep edits. Do not reassemble while another build is running.
@@ -41,13 +41,11 @@ affected conditional platform branch with `--target`; compiler checks do not pro
 native runtime behavior on another OS. Build/link and exercise the changed API or
 workflow on its supported host as well.
 
-Test suites, fixtures and detailed reports are private/ignored for now. Maintainers
-run those suites before merge or publication; a fresh checkout is not expected to
-contain them. Include your compiler/tool versions, host/target, exact build and
-reproduction commands, expected behavior and observed output in the pull request.
-Do not commit private tests, generated builds, caches, credentials or machine
-configuration. Keep the patch focused and note any unverified platforms or runtime
-prerequisites. Inventory checks alone are not build or test acceptance.
+Include compiler/tool versions, host and target, exact build and reproduction
+commands, expected behavior and observed output in the pull request. Exercise
+changed behavior on its supported host and describe remaining platform limits.
+Keep changes focused and omit generated build outputs, caches, credentials and
+machine configuration. Inventory checks alone do not establish runtime behavior.
 
 ## License of contributions
 

@@ -1,6 +1,6 @@
 # Install signed updates from feeds or GitHub Releases
 
-A reusable, headless updater for Buoy GUI and console apps on macOS, Windows and
+A reusable, headless updater for GUI and console apps on macOS, Windows and
 Linux, on arm64 and x86_64. Consumers write `Import updatekit`. Construction and
 import do not access the network, prompt, exit, or launch another process.
 
@@ -10,14 +10,14 @@ From a Buoy consumer project with BPM installed:
 
 ```sh
 bpm add updatekit --git https://github.com/BuoyBay/updatekit.git --rev refs/heads/main
-```
+```basic
 
 BPM records the resolved commit in its lockfile. Keep that lockfile with the
 consumer project for reproducible installs.
 
 ## Example
 
-```buoy
+```basic
 Import updatekit
 
 Sub Main()
@@ -54,8 +54,6 @@ On your own machine, install Buoy and run:
 ```sh
 buoy ai init --both
 ```
-
-The generated agent files and editor settings stay local and are ignored by Git.
 
 ## Contributing
 

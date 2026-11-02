@@ -1,7 +1,8 @@
 # Licensing
 
 The `updatekit` package and its first-party supporting code is licensed `MIT OR Apache-2.0`.
-You may use either license. Full texts are in [LICENSES/](LICENSES/); the
+You may use either license. Full texts are provided as [MIT](LICENSE-MIT.txt) and
+[Apache-2.0](LICENSE-APACHE.txt); the
 repository's [LICENSE](LICENSE) identifies the default code license.
 
 Documentation prose is `CC-BY-4.0`. Code samples follow the license of the code
@@ -20,7 +21,7 @@ the right to license under the applicable terms.
 
 This is the inbound contribution policy reflected by [Apache-2.0 section 5](https://www.apache.org/licenses/LICENSE-2.0#contributions)
 and [GitHub's contribution terms](https://docs.github.com/en/site-policy/github-terms/github-terms-of-service#6-contributions-under-repository-license).
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development and review expectations.
+See [CONTRIBUTING.md](https://github.com/BuoyBay/updatekit/blob/main/CONTRIBUTING.md) for development and review expectations.
 
 The Buoy compiler/runtime is a separately licensed product. Reusing these
 permissive packages or tools does not apply Studio's AGPL license to an application.

@@ -231,8 +231,6 @@ Build with Rust 1.93+, Python 3.11+, and the Buoy toolchain:
 python3 tools/build_updatekit.py
 ```
 
-The native CI matrix (not included in this repository) runs Rust tests and builds on all six native runner architectures. Runner labels follow the [GitHub runner reference](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
-
 The builder uses Cargo.lock, builds the library and independent helper, checks the
 Buoy module on all six targets and seals `packages/updatekit-0.1.0.buipkg` (also
 copied to `dist`). It includes dependency license notices. Native source receipts
@@ -252,29 +250,6 @@ helper before sealing; sign/notarize the enclosing app as part of product releas
 Do not substitute an arbitrary downloaded helper or sign the app before embedding
 its updater resources. Dependency notices are in `Resources/updatekit/third-party`.
 
-Tests use temporary applications and loopback servers. They never replace the
-running development tool or contact a production update service. Compiler checks
-validate Buoy syntax on all targets. Native Linux execution verifies transport, signatures, archive safety, the
-sealed Buoy consumer, helper parent exit, exact relaunch arguments, whole-folder
-replacement, rollback and health confirmation. The native CI matrix builds the
-helper before tests, including a Windows running-image/relaunch fixture. Windows
-sources are also checked with a GNU cross toolchain and executed on the Windows
-guest. See the precise remaining release checks below; the CI matrix itself was
-not dispatched during this validation.
-
-Current native validation and artifact provenance are recorded in
-[PROVENANCE.md](../PROVENANCE.md) and
-the machine-readable evidence.
-The combined package contains current, runtime-tested **Linux x86_64, macOS
-arm64, and Windows x86_64** slices. Linux and Mac run 35 library tests plus 2
-helper tests; Windows runs 29 library tests plus 2 helper tests. Seven publishing
-and Mach-O normalization regressions pass. The signed-feed ABI suite exercises
-binary, ZIP, and tar.gz downloads, prepare without replacement, parent exit,
-exact relaunch arguments, directory replacement, rollback, and confirmation.
-Mac also runs an isolated sealed Buoy consumer and compiles the GUI example;
-Windows runs an isolated Buoy consumer on the guest. No desktop interaction is
-needed for these lifecycle tests.
-
 Windows binaries were built with Rust's GNU target on Linux and executed on the
 Windows 11 x86_64 guest. Their C ABI and COFF import library work with Buoy's
 Windows consumer. The default native builder still targets MSVC. To reproduce
@@ -284,13 +259,6 @@ the validated cross build with an installed MinGW/Rust toolchain:
 python3 tools/build_updatekit.py --target x86_64-windows \
   --rust-target x86_64-pc-windows-gnu --native-only
 ```
-
-`--native-only` on the **test runner** skips Cargo/compiler work and accepts
-explicit `--library`, `--helper`, and optional prebuilt `--payload`/`--consumer`
-paths. OpenSSL is the default fixture signer. A private testing Python can use
-`--signing-backend cryptography` when OpenSSL is unavailable; this dependency is
-only for validation, never for end-user applications. See the recorded commands
-and dependency hashes in the evidence directory.
 
 Remaining native gaps are explicit: macOS x86_64 (no Intel execution/Rosetta),
 Linux arm64 and Windows arm64 (no authorized native hosts), a native MSVC-producer
@@ -311,8 +279,8 @@ slices must not enter a combined package. Native Windows Buoy 0.72 package
 inflation requires the stored-ZIP workaround tracked by BUI-008. Precreate output
 directories before compiling; BUI-701 records the otherwise missing DLL staging.
 
-
-
 Protocol background: [Sparkle security](https://sparkle-project.org/documentation/) and [GitHub Releases API](https://docs.github.com/en/rest/releases/releases). UpdateKit implements its own signed protocol and does not wrap either project.
 
-Test suites and fixtures are maintainer-local and are not part of this public repository.
+Builder context: run shared `tools/` commands from the assembled
+[BuoyBay workspace](https://github.com/BuoyBay/workspace-tools). The scripts live
+in [devtools](https://github.com/BuoyBay/devtools), alongside the shared build inputs.
