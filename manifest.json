@@ -2,7 +2,7 @@
   "schema": 1,
   "name": "updatekit",
   "version": "0.1.0",
-  "description": "Signed updates from feeds or GitHub Releases",
+  "description": "Signed app updates",
   "libraries": [
     {
       "libName": "buoy_updatekit",
