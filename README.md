@@ -47,14 +47,6 @@ Source is in `modules/`, with native/runtime inputs where required. Use the
 rules and supported targets. Rebuilding a native backend requires that target's
 compiler and SDK; sealing an archive alone does not rebuild the backend.
 
-## Local Buoy setup
-
-On your own machine, install Buoy and run:
-
-```sh
-buoy ai init --both
-```
-
 ## Contributing
 
 [Contributing](CONTRIBUTING.md) · [License](LICENSE)
