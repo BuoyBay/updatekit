@@ -1,4 +1,4 @@
-# Install signed updates from feeds or GitHub Releases
+# Signed updates from feeds or GitHub Releases
 
 A reusable, headless updater for GUI and console apps on macOS, Windows and
 Linux, on arm64 and x86_64. Consumers write `Import updatekit`. Construction and
